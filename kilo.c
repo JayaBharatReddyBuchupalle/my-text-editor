@@ -39,12 +39,22 @@ void enableRawMode(void) {
 char editorReadKey(void) {
   int nread;
   char c = '\0';
-  while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+  while ((nread = read(STDIN_FILENO, &c, 1)) !=
+         1) { // Here the third parameter in the read function is the max limit
+              // bytes that it can capture, the min limit is captured by VMIN.
+    // VTIME is the timeout in tenths of a second. So it waits for VMIN bytes to
+    // be read, or VTIME tenths of a second to pass.
     if (nread == -1 && errno != EAGAIN) {
       die("read");
     }
   }
   return c;
+}
+
+/*** output ***/
+void editorRefreshScreen() {
+
+  write(STDOUT_FILENO, "\x1b[2J", 4); // Clear screen escape sequence.
 }
 
 /*** input ***/
@@ -61,6 +71,7 @@ int main(void) {
   enableRawMode();
 
   while (1) {
+    editorRefreshScreen();
     editorProcessKeypress();
   }
   return 0;
