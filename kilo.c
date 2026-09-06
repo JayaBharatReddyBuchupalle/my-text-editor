@@ -54,7 +54,9 @@ char editorReadKey(void) {
 /*** output ***/
 void editorRefreshScreen() {
 
-  write(STDOUT_FILENO, "\x1b[2J", 4); // Clear screen escape sequence.
+  write(STDOUT_FILENO, "\x1b[2J", 4);   // Clear screen escape sequence.
+  write(STDOUT_FILENO, "\x1b[1;1H", 6); // Move cursor to top-left corner escape
+                                        // sequence.
 }
 
 /*** input ***/
