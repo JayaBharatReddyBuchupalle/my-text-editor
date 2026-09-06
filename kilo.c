@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -10,7 +11,12 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 /*** data ***/
-struct termios orig_termios;
+struct editorConfig {
+  int screenRows;
+  int screenCols;
+  struct termios orig_termios;
+};
+struct editorConfig E;
 
 /*** terminal ***/
 void die(const char *s) {
@@ -21,15 +27,16 @@ void die(const char *s) {
   exit(1);
 }
 void disableRawMode(void) {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1)
     die("tcsetattr");
 }
+
 void enableRawMode(void) {
-  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+  if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1)
     die("tcgetattr");
   atexit(disableRawMode);
   struct termios raw;
-  raw = orig_termios;
+  raw = E.orig_termios;
   raw.c_iflag &= ~(ICRNL | IXON);
   raw.c_oflag &= ~(OPOST);
   raw.c_lflag &= ~(IEXTEN | ECHO | ICANON | ISIG);
@@ -54,15 +61,24 @@ char editorReadKey(void) {
   return c;
 }
 
+int getWindowSize(int *rows, int *cols) {
+  struct winsize sz;
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &sz) == -1 || sz.ws_col == 0) {
+    return -1;
+  } else {
+    *cols = sz.ws_col;
+    *rows = sz.ws_row;
+    return 0;
+  }
+}
 /*** output ***/
-void editorDrawRows() {
-  int screenRows = 24;
-  for (int y = 0; y < screenRows; y++) {
+void editorDrawRows(void) {
+  for (int y = 0; y < E.screenRows; y++) {
     write(STDOUT_FILENO, "~\r\n", 3);
   }
 }
 
-void editorRefreshScreen() {
+void editorRefreshScreen(void) {
 
   write(STDOUT_FILENO, "\x1b[2J", 4); // Clear screen escape sequence.
   write(STDOUT_FILENO, "\x1b[H", 3);  // Move cursor to top-left corner
@@ -85,9 +101,14 @@ void editorProcessKeypress(void) {
 }
 
 /*** init ***/
+void initEditor() {
+  if (getWindowSize(&E.screenRows, &E.screenCols) == -1)
+    die("getWindowSize");
+}
+
 int main(void) {
   enableRawMode();
-
+  initEditor();
   while (1) {
     editorRefreshScreen();
     editorProcessKeypress();
