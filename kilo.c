@@ -14,6 +14,9 @@ struct termios orig_termios;
 
 /*** terminal ***/
 void die(const char *s) {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
   perror(s);
   exit(1);
 }
@@ -55,8 +58,8 @@ char editorReadKey(void) {
 void editorRefreshScreen() {
 
   write(STDOUT_FILENO, "\x1b[2J", 4);   // Clear screen escape sequence.
-  write(STDOUT_FILENO, "\x1b[1;1H", 6); // Move cursor to top-left corner escape
-                                        // sequence.
+  write(STDOUT_FILENO, "\x1b[1;1H", 6); // Move cursor to top-left corner
+  // escape sequence.
 }
 
 /*** input ***/
@@ -64,7 +67,11 @@ void editorProcessKeypress(void) {
   char c = editorReadKey();
   switch (c) {
   case CTRL_KEY('e'):
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
     exit(0);
+  case CTRL_KEY('f'): // Temporary test key to trigger an error
+    die("test error");
   }
 }
 
