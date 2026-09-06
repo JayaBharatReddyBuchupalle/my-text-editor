@@ -55,11 +55,20 @@ char editorReadKey(void) {
 }
 
 /*** output ***/
+void editorDrawRows() {
+  int screenRows = 24;
+  for (int y = 0; y < screenRows; y++) {
+    write(STDOUT_FILENO, "~\r\n", 3);
+  }
+}
+
 void editorRefreshScreen() {
 
-  write(STDOUT_FILENO, "\x1b[2J", 4);   // Clear screen escape sequence.
-  write(STDOUT_FILENO, "\x1b[1;1H", 6); // Move cursor to top-left corner
+  write(STDOUT_FILENO, "\x1b[2J", 4); // Clear screen escape sequence.
+  write(STDOUT_FILENO, "\x1b[H", 3);  // Move cursor to top-left corner
   // escape sequence.
+  editorDrawRows();
+  write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 /*** input ***/
