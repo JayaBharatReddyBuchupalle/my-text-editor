@@ -6,6 +6,7 @@
 #include <termios.h>
 #include <unistd.h>
 
+/*** defines ***/
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 /*** data ***/
@@ -16,11 +17,11 @@ void die(const char *s) {
   perror(s);
   exit(1);
 }
-void disableRawMode() {
+void disableRawMode(void) {
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
     die("tcsetattr");
 }
-void enableRawMode() {
+void enableRawMode(void) {
   if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
     die("tcgetattr");
   atexit(disableRawMode);
@@ -35,20 +36,32 @@ void enableRawMode() {
     die("tcsetattr");
 }
 
-/*** init ***/
-int main() {
-  enableRawMode();
+char editorReadKey(void) {
+  int nread;
   char c = '\0';
-  while (1) {
-    if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN)
+  while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+    if (nread == -1 && errno != EAGAIN) {
       die("read");
-    if (iscntrl(c)) {
-      printf("%d\r\n", c);
-    } else {
-      printf("%d ('%c')\r\n", c, c);
     }
-    if (c == CTRL_KEY('e'))
-      break;
+  }
+  return c;
+}
+
+/*** input ***/
+void editorProcessKeypress(void) {
+  char c = editorReadKey();
+  switch (c) {
+  case CTRL_KEY('e'):
+    exit(0);
+  }
+}
+
+/*** init ***/
+int main(void) {
+  enableRawMode();
+
+  while (1) {
+    editorProcessKeypress();
   }
   return 0;
 }
