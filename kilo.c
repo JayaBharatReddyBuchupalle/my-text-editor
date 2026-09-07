@@ -10,6 +10,8 @@
 
 /*** defines ***/
 #define CTRL_KEY(k) ((k) & 0x1f)
+#define TEXT_EDITOR_VERSION "0.0.1"
+#define ABUF_INIT {NULL, 0};
 
 /*** data ***/
 struct editorConfig {
@@ -102,7 +104,6 @@ struct abuf {
   char *b;
   int len;
 };
-#define ABUF_INIT {NULL, 0};
 
 void abAppend(struct abuf *ab, const char *s, int len) {
   char *new = realloc(ab->b, ab->len + len);
@@ -118,7 +119,26 @@ void abFree(struct abuf *ab) { free(ab->b); }
 /*** output ***/
 void editorDrawRows(struct abuf *ab) {
   for (int y = 0; y < E.screenRows; y++) {
-    abAppend(ab, "~", 1);
+    if (y == E.screenRows / 3) {
+      char welcome[80];
+      int welcomelen =
+          snprintf(welcome, sizeof(welcome), "Text Editor -- version %s",
+                   TEXT_EDITOR_VERSION);
+      if (welcomelen > E.screenCols)
+        welcomelen = E.screenCols;
+      int padding = (E.screenCols - welcomelen) / 2;
+      if (padding) {
+        abAppend(ab, "~", 1);
+        padding--;
+      }
+      while (padding--) {
+        abAppend(ab, " ", 1);
+      }
+      abAppend(ab, welcome, welcomelen);
+
+    } else {
+      abAppend(ab, "~", 1);
+    }
     abAppend(ab, "\x1b[K", 3); // Clear line after cursor
     if (y < E.screenRows - 1) {
       abAppend(ab, "\r\n", 2); // newline(/n) and starting position of next
