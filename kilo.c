@@ -61,16 +61,41 @@ char editorReadKey(void) {
   return c;
 }
 
+int getCursorPosition(int *rows, int *cols) {
+  char buf[32];
+  unsigned int i = 0;
+  if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4)
+    return -1;
+  while (i < sizeof(buf) - 1) {
+    if (read(STDIN_FILENO, &buf[i], 1) != 1)
+      break;
+    if (buf[i] == 'R')
+      break;
+    i++;
+  }
+  buf[i] = '\0';
+
+  if (buf[0] != '\x1b' || buf[1] != '[')
+    return -1;
+  if (sscanf(&buf[2], "%d;%dR", rows, cols) != 2)
+    return -1;
+  return 0;
+}
+
 int getWindowSize(int *rows, int *cols) {
   struct winsize sz;
   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &sz) == -1 || sz.ws_col == 0) {
-    return -1;
+    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) {
+      return -1;
+    }
+    return getCursorPosition(rows, cols);
   } else {
     *cols = sz.ws_col;
     *rows = sz.ws_row;
     return 0;
   }
 }
+
 /*** output ***/
 void editorDrawRows(void) {
   for (int y = 0; y < E.screenRows; y++) {
@@ -85,6 +110,7 @@ void editorRefreshScreen(void) {
   // escape sequence.
   editorDrawRows();
   write(STDOUT_FILENO, "\x1b[H", 3);
+  // write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12);
 }
 
 /*** input ***/
