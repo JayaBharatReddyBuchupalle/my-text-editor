@@ -118,25 +118,26 @@ void abFree(struct abuf *ab) { free(ab->b); }
 /*** output ***/
 void editorDrawRows(struct abuf *ab) {
   for (int y = 0; y < E.screenRows; y++) {
-    // write(STDOUT_FILENO, "~", 1);
     abAppend(ab, "~", 1);
+    abAppend(ab, "\x1b[K", 3); // Clear line after cursor
     if (y < E.screenRows - 1) {
-      // write(STDOUT_FILENO, "\r\n", 2);
-      abAppend(ab, "\r\n", 2);
+      abAppend(ab, "\r\n", 2); // newline(/n) and starting position of next
+                               // line(/r)
     }
   }
 }
 
 void editorRefreshScreen(void) {
   struct abuf ab = ABUF_INIT;
-  abAppend(&ab, "\x1b[2J", 4); // Clear screen escape sequence.
-  abAppend(&ab, "\x1b[H", 3);  // Move cursor to top-left corner
+  abAppend(&ab, "\x1b[?25l", 6); // Hide cursor
+  // abAppend(&ab, "\x1b[2J", 4);   // Clear screen escape sequence.
+  abAppend(&ab, "\x1b[H", 3); // Move cursor to top-left corner
   // escape sequence.
   editorDrawRows(&ab);
-  abAppend(&ab, "\x1b[H", 3);
+  abAppend(&ab, "\x1b[H", 3);    // Move cursor to top-left corner
+  abAppend(&ab, "\x1b[?25h", 6); // Show cursor
   write(STDOUT_FILENO, ab.b, ab.len);
   abFree(&ab);
-  // write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12);
 }
 
 /*** input ***/
