@@ -18,6 +18,7 @@ enum editorKey {
   ARROW_RIGHT,
   ARROW_UP,
   ARROW_DOWN,
+  DEL_KEY
 };
 
 /*** data ***/
@@ -78,15 +79,23 @@ int editorReadKey(void) {
       return c;
 
     if (seq[0] == '[') {
-      switch (seq[1]) {
-      case 'A': // up arrow
-        return ARROW_UP;
-      case 'B': // down arrow
-        return ARROW_DOWN;
-      case 'C': // right arrow
-        return ARROW_RIGHT;
-      case 'D': // left arrow
-        return ARROW_LEFT;
+      if (seq[1] >= '0' && seq[1] <= '9') {
+        while (read(STDIN_FILENO, &seq[2], 1) != 1)
+          return '\x1b';
+        if (seq[2] == '~' && seq[1] == '3') {
+          return DEL_KEY;
+        }
+      } else {
+        switch (seq[1]) {
+        case 'A': // up arrow
+          return ARROW_UP;
+        case 'B': // down arrow
+          return ARROW_DOWN;
+        case 'C': // right arrow
+          return ARROW_RIGHT;
+        case 'D': // left arrow
+          return ARROW_LEFT;
+        }
       }
     }
     return '\x1b';
