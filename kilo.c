@@ -14,10 +14,10 @@
 #define ABUF_INIT {NULL, 0};
 
 enum editorKey {
-  ARROW_LEFT = 'a',
-  ARROW_RIGHT = 'd',
-  ARROW_UP = 'w',
-  ARROW_DOWN = 's',
+  ARROW_LEFT = 1000,
+  ARROW_RIGHT,
+  ARROW_UP,
+  ARROW_DOWN,
 };
 
 /*** data ***/
@@ -57,7 +57,7 @@ void enableRawMode(void) {
     die("tcsetattr");
 }
 
-char editorReadKey(void) {
+int editorReadKey(void) {
   int nread;
   char c = '\0';
   while ((nread = read(STDIN_FILENO, &c, 1)) !=
@@ -194,7 +194,7 @@ void editorRefreshScreen(void) {
 }
 
 /*** input ***/
-void editorMoveCursor(char key) {
+void editorMoveCursor(int key) {
   switch (key) {
   case ARROW_UP:
     E.cy--;
@@ -212,7 +212,7 @@ void editorMoveCursor(char key) {
 }
 
 void editorProcessKeypress(void) {
-  char c = editorReadKey();
+  int c = editorReadKey();
   switch (c) {
   case CTRL_KEY('e'):
     write(STDOUT_FILENO, "\x1b[2J", 4);
